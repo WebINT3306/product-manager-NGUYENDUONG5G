@@ -46,7 +46,6 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         th, td {
             padding: 12px;
@@ -58,14 +57,13 @@
             color: white;
             position: relative;
         }
-        /* CSS cho cột sắp xếp */
         #th-name {
             cursor: pointer;
+            user-select: none;
         }
         #th-name:hover {
             background-color: #0056b3;
         }
-        /* Yêu cầu 4.4: Màu nền xen kẽ và hover */
         tbody tr:nth-child(even) {
             background-color: #f9f9f9;
         }
@@ -85,7 +83,7 @@
 
     <h1>Quản lý Sản Phẩm</h1>
 
-  
+   
 
     <table id="product-table">
         <thead>
@@ -100,8 +98,8 @@
         <tbody>
             </tbody>
     </table>
-    
-  <div class="form-container">
+
+     <div class="form-container">
         <input type="text" id="input-name" placeholder="Tên sản phẩm">
         <input type="text" id="input-category" placeholder="Danh mục">
         <input type="number" id="input-price" placeholder="Đơn giá" min="1">
@@ -109,23 +107,21 @@
         <button id="btn-add">Thêm sản phẩm</button>
         <div id="form-error" class="error-message"></div>
     </div>
-    <script>
-        
-        let products = [];
-        let isAscending = false; 
 
-      
-        document.addEventListener('DOMContentLoaded', function() {
-            const xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    products = JSON.parse(xhr.responseText);
-                    renderTable();
-                }
-            };
-            xhr.open('GET', 'products.json', true);
-            xhr.send();
-        });
+    <script>
+        let products = [];
+        let isAscending = false;
+
+     
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                products = JSON.parse(xhr.responseText);
+                renderTable();
+            }
+        };
+        xhr.open('GET', 'products.json');
+        xhr.send();
 
        
         function renderTable() {
@@ -136,20 +132,18 @@
                 const tr = document.createElement('tr');
                 
               
-                const formattedPrice = product.price.toLocaleString('vi-VN');
-
                 tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${product.name}</td>
                     <td>${product.category || ''}</td>
-                    <td>${formattedPrice}</td>
+                    <td>${product.price}</td>
                     <td>${product.quantity}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-       
+
         document.getElementById('th-name').addEventListener('click', function() {
             isAscending = !isAscending; 
             
@@ -162,14 +156,11 @@
                 return 0;
             });
 
-         
             document.getElementById('sort-icon').innerText = isAscending ? '▲' : '▼';
-            
-          
             renderTable();
         });
 
-      
+     
         document.getElementById('btn-add').addEventListener('click', function() {
             const nameInput = document.getElementById('input-name');
             const categoryInput = document.getElementById('input-category');
@@ -184,43 +175,35 @@
 
             errorDiv.innerText = ''; 
 
-           
             if (name.length < 3) {
-                errorDiv.innerText = 'Lỗi: Tên sản phẩm không được rỗng và phải có ít nhất 3 ký tự.';
-                nameInput.focus();
+                errorDiv.innerText = 'Lỗi: Tên sản phẩm phải có ít nhất 3 ký tự.';
                 return;
             }
             if (isNaN(price) || price <= 0) {
                 errorDiv.innerText = 'Lỗi: Đơn giá phải là số dương.';
-                priceInput.focus();
                 return;
             }
             if (!Number.isInteger(quantity) || quantity < 1) {
-                errorDiv.innerText = 'Lỗi: Số lượng phải là số nguyên và lớn hơn hoặc bằng 1.';
-                quantityInput.focus();
+                errorDiv.innerText = 'Lỗi: Số lượng phải là số nguyên ≥ 1.';
                 return;
             }
 
-            
             const newProduct = {
-                id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1, // Tự động tăng ID
+                id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1,
                 name: name,
                 category: category,
                 price: price,
                 quantity: quantity
             };
 
-          
             products.push(newProduct);
             renderTable();
 
-           
             nameInput.value = '';
             categoryInput.value = '';
             priceInput.value = '';
             quantityInput.value = '';
             
-           
             document.getElementById('sort-icon').innerText = '';
             isAscending = false; 
         });
