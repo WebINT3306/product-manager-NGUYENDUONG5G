@@ -1,11 +1,229 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý Sản phẩm</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sản phẩm</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px auto;
+            max-width: 900px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-container {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 150px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            position: relative;
+        }
+        /* CSS cho cột sắp xếp */
+        #th-name {
+            cursor: pointer;
+        }
+        #th-name:hover {
+            background-color: #0056b3;
+        }
+        /* Yêu cầu 4.4: Màu nền xen kẽ và hover */
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.9em;
+            width: 100%;
+            margin-top: -5px;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
 
+    <h1>Quản lý Sản Phẩm</h1>
+
+  
+
+    <table id="product-table">
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th id="th-name">Tên sản phẩm <span id="sort-icon"></span></th>
+                <th>Danh mục</th>
+                <th>Đơn giá</th>
+                <th>Số lượng</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+    
+  <div class="form-container">
+        <input type="text" id="input-name" placeholder="Tên sản phẩm">
+        <input type="text" id="input-category" placeholder="Danh mục">
+        <input type="number" id="input-price" placeholder="Đơn giá" min="1">
+        <input type="number" id="input-quantity" placeholder="Số lượng" min="1">
+        <button id="btn-add">Thêm sản phẩm</button>
+        <div id="form-error" class="error-message"></div>
+    </div>
+    <script>
+        
+        let products = [];
+        let isAscending = false; 
+
+      
+        document.addEventListener('DOMContentLoaded', function() {
+            const xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    products = JSON.parse(xhr.responseText);
+                    renderTable();
+                }
+            };
+            xhr.open('GET', 'products.json', true);
+            xhr.send();
+        });
+
+       
+        function renderTable() {
+            const tbody = document.querySelector('#product-table tbody');
+            tbody.innerHTML = ''; 
+
+            products.forEach((product, index) => {
+                const tr = document.createElement('tr');
+                
+              
+                const formattedPrice = product.price.toLocaleString('vi-VN');
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${product.name}</td>
+                    <td>${product.category || ''}</td>
+                    <td>${formattedPrice}</td>
+                    <td>${product.quantity}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+       
+        document.getElementById('th-name').addEventListener('click', function() {
+            isAscending = !isAscending; 
+            
+            products.sort((a, b) => {
+                const nameA = a.name.toLowerCase();
+                const nameB = b.name.toLowerCase();
+                
+                if (nameA < nameB) return isAscending ? -1 : 1;
+                if (nameA > nameB) return isAscending ? 1 : -1;
+                return 0;
+            });
+
+         
+            document.getElementById('sort-icon').innerText = isAscending ? '▲' : '▼';
+            
+          
+            renderTable();
+        });
+
+      
+        document.getElementById('btn-add').addEventListener('click', function() {
+            const nameInput = document.getElementById('input-name');
+            const categoryInput = document.getElementById('input-category');
+            const priceInput = document.getElementById('input-price');
+            const quantityInput = document.getElementById('input-quantity');
+            const errorDiv = document.getElementById('form-error');
+
+            const name = nameInput.value.trim();
+            const category = categoryInput.value.trim();
+            const price = Number(priceInput.value);
+            const quantity = Number(quantityInput.value);
+
+            errorDiv.innerText = ''; 
+
+           
+            if (name.length < 3) {
+                errorDiv.innerText = 'Lỗi: Tên sản phẩm không được rỗng và phải có ít nhất 3 ký tự.';
+                nameInput.focus();
+                return;
+            }
+            if (isNaN(price) || price <= 0) {
+                errorDiv.innerText = 'Lỗi: Đơn giá phải là số dương.';
+                priceInput.focus();
+                return;
+            }
+            if (!Number.isInteger(quantity) || quantity < 1) {
+                errorDiv.innerText = 'Lỗi: Số lượng phải là số nguyên và lớn hơn hoặc bằng 1.';
+                quantityInput.focus();
+                return;
+            }
+
+            
+            const newProduct = {
+                id: products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1, // Tự động tăng ID
+                name: name,
+                category: category,
+                price: price,
+                quantity: quantity
+            };
+
+          
+            products.push(newProduct);
+            renderTable();
+
+           
+            nameInput.value = '';
+            categoryInput.value = '';
+            priceInput.value = '';
+            quantityInput.value = '';
+            
+           
+            document.getElementById('sort-icon').innerText = '';
+            isAscending = false; 
+        });
+    </script>
 </body>
 </html>
